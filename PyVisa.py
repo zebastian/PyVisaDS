@@ -124,7 +124,10 @@ class PyVisa(PyTango.Device_4Impl):
             try:
                 self.set_state(PyTango.DevState.INIT)
                 #1: connect to the instrument
-                self.__instrument = instrument(self.VisaName)
+                # self.__instrument = instrument(self.VisaName) old visa format
+                rm = ResourceManager(self.VisaLibrary)
+                self.__instrument = rm.open_resource(self.VisaName)
+
                 #2: setup the state
                 self.set_state(PyTango.DevState.ON)
                 self.machineStatus()
@@ -133,11 +136,11 @@ class PyVisa(PyTango.Device_4Impl):
                 self.__connectionEvent.wait()
                 self.debug_stream("In %s::connect(): Connectivity thread wake up"%(self.get_name()))
                 self.__connectionEvent.clear()
-            except Exception, e:
+            except Exception as e:
                 self.set_state(PyTango.DevState.FAULT)
                 self.machineStatus(e)
                 msg = "In %s::connect(): (re)connection thread exception: %s"%(self.get_name(),e)
-                if repeatMsg == msg and not repeatMsgCnt == sys.maxint:
+                if repeatMsg == msg and not repeatMsgCnt == sys.maxsize:
                     repeatMsgCnt += 1
                 else:
                     if not repeatMsgCnt == 0:#not necessary to say it is more than sys.maxint
@@ -189,7 +192,7 @@ class PyVisa(PyTango.Device_4Impl):
         At the init stage the state is ON and a thred will be
         started in order to check periodically the state of the device.
         """
-        self.debug_stream("In ", self.get_name(), "::init_device()")
+        self.debug_stream("In " + self.get_name() + "::init_device()")
         self.set_state(PyTango.DevState.ON)
         self.machineStatus()
         self.get_device_properties(self.get_device_class())
@@ -197,7 +200,7 @@ class PyVisa(PyTango.Device_4Impl):
         try:
             #TODO: Not a try, a thread how allows connection in background
             self.startThread(1)
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             return
@@ -206,7 +209,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Always excuted hook method
 #------------------------------------------------------------------
     def always_executed_hook(self):
-        self.debug_stream("In ", self.get_name(), "::always_excuted_hook()")
+        self.debug_stream("In " + self.get_name() + "::always_excuted_hook()")
 
 #==================================================================
 #
@@ -217,7 +220,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read Attribute Hardware
 #------------------------------------------------------------------
     def read_attr_hardware(self, data):
-        self.debug_stream("In ", self.get_name(), "::read_attr_hardware()")
+        self.debug_stream("In " + self.get_name() + "::read_attr_hardware()")
 
 
 
@@ -225,13 +228,13 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read Timeout attribute
 #------------------------------------------------------------------
     def read_Timeout(self, attr):
-        self.debug_stream("In ", self.get_name(), "::read_Timeout()")
+        self.debug_stream("In " + self.get_name() + "::read_Timeout()")
         
         #    Add your own code here
         try:
             attr_Timeout_read = self.__instrument.timeout
             attr.set_value(attr_Timeout_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream("In ", self.get_name(), "::read_Timeout() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -242,7 +245,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write Timeout attribute
 #------------------------------------------------------------------
     def write_Timeout(self, attr):
-        self.debug_stream("In ", self.get_name(), "::write_Timeout()")
+        self.debug_stream("In " + self.get_name() + "::write_Timeout()")
         data=[]
         attr.get_write_value(data)
         self.warn_stream("%s: Timeout attribute value = %s"%(self.VisaName,data))
@@ -253,7 +256,7 @@ class PyVisa(PyTango.Device_4Impl):
             if timeout == 0:
                 timeout = 0.1
             self.__instrument.timeout = timeout
-        except Exception,e:
+        except Exception as e:
             self.error_stream("In %s::write_Timeout() Exception: %s"%(self.get_name(),e))
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -265,14 +268,14 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read ChunkSize attribute
 #------------------------------------------------------------------
     def read_ChunkSize(self, attr):
-        self.debug_stream("In ", self.get_name(), "::read_ChunkSize()")
+        self.debug_stream("In " + self.get_name() + "::read_ChunkSize()")
         
         #    Add your own code here
 
         try:
             attr_ChunkSize_read = self.__instrument.chunk_size
             attr.set_value(attr_ChunkSize_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream("In ", self.get_name(), "::read_ChunkSize() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -283,7 +286,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write ChunkSize attribute
 #------------------------------------------------------------------
     def write_ChunkSize(self, attr):
-        self.debug_stream("In ", self.get_name(), "::write_ChunkSize()")
+        self.debug_stream("In " + self.get_name() + "::write_ChunkSize()")
         data=[]
         attr.get_write_value(data)
         #print self.VisaName+": ChunkSize attribute value = ", data
@@ -291,7 +294,7 @@ class PyVisa(PyTango.Device_4Impl):
         #    Add your own code here
         try:
             self.__instrument.chunk_size = data[0]
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::write_ChunkSize() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -302,14 +305,14 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read ValuesFormat attribute
 #------------------------------------------------------------------
     def read_ValuesFormat(self, attr):
-        self.debug_stream( "In ", self.get_name(), "::read_ValuesFormat()")
+        self.debug_stream( "In " + self.get_name() + "::read_ValuesFormat()")
         
         #    Add your own code here
         try:
             index = self.__instrument.values_format
             attr_ValuesFormat_read = self.FORMATS[index]
             attr.set_value(attr_ValuesFormat_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::read_ValuesFormat() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -320,7 +323,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write ValuesFormat attribute
 #------------------------------------------------------------------
     def write_ValuesFormat(self, attr):
-        self.debug_stream( "In ", self.get_name(), "::write_ValuesFormat()")
+        self.debug_stream( "In " + self.get_name() + "::write_ValuesFormat()")
         data=[]
         attr.get_write_value(data)
         #self.debug_stream(self.VisaName+": ValuesFormat attribute value = ", data)
@@ -329,7 +332,7 @@ class PyVisa(PyTango.Device_4Impl):
         try:
             format = data[0]
             self.__instrument.values_format = self.FORMATS.index(format)
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::write_ValuesFormat() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -340,7 +343,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read TermChars attribute
 #------------------------------------------------------------------
     def read_TermChars(self, attr):
-        self.debug_stream( "In ", self.get_name(), "::read_TermChars()")
+        self.debug_stream( "In " + self.get_name() + "::read_TermChars()")
         
         #    Add your own code here
         
@@ -352,7 +355,7 @@ class PyVisa(PyTango.Device_4Impl):
             chars = chars.replace("\n", "LF")
             attr_TermChars_read = chars
             attr.set_value(attr_TermChars_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In %s::read_TermChars() Exception: %s"%(self.get_name(),e))
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -363,7 +366,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write TermChars attribute
 #------------------------------------------------------------------
     def write_TermChars(self, attr):
-        self.debug_stream("In ", self.get_name(), "::write_TermChars()")
+        self.debug_stream("In " + self.get_name() + "::write_TermChars()")
         data=[]
         attr.get_write_value(data)
         #self.debug_stream(self.VisaName+": TermChars attribute value = ", data)
@@ -374,7 +377,7 @@ class PyVisa(PyTango.Device_4Impl):
             chars = chars.replace("CR", "\r")
             chars = chars.replace("LF", "\n")
             self.__instrument.term_chars = chars
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::write_TermChars() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -385,14 +388,14 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read SendEnd attribute
 #------------------------------------------------------------------
     def read_SendEnd(self, attr):
-        self.debug_stream("In ", self.get_name(), "::read_SendEnd()")
+        self.debug_stream("In " + self.get_name() + "::read_SendEnd()")
         
         #    Add your own code here
         
         try:
             attr_SendEnd_read = self.__instrument.send_end
             attr.set_value(attr_SendEnd_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::read_SendEnd() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -403,7 +406,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write SendEnd attribute
 #------------------------------------------------------------------
     def write_SendEnd(self, attr):
-        self.debug_stream("In ", self.get_name(), "::write_SendEnd()")
+        self.debug_stream("In " + self.get_name() + "::write_SendEnd()")
         data=[]
         attr.get_write_value(data)
         #print self.VisaName+": SendEnd attribute value = ", data
@@ -411,7 +414,7 @@ class PyVisa(PyTango.Device_4Impl):
         #    Add your own code here
         try:
             self.__instrument.send_end = data[0]
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::write_SendEnd() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -422,14 +425,14 @@ class PyVisa(PyTango.Device_4Impl):
 #    Read Delay attribute
 #------------------------------------------------------------------
     def read_Delay(self, attr):
-        self.debug_stream("In ", self.get_name(), "::read_Delay()")
+        self.debug_stream("In " + self.get_name() + "::read_Delay()")
         
         #    Add your own code here
         
         try:
             attr_Delay_read = self.__instrument.delay
             attr.set_value(attr_Delay_read)
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::read_Delay() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -440,7 +443,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    Write Delay attribute
 #------------------------------------------------------------------
     def write_Delay(self, attr):
-        self.debug_stream( "In ", self.get_name(), "::write_Delay()")
+        self.debug_stream( "In " + self.get_name() + "::write_Delay()")
         data=[]
         attr.get_write_value(data)
         #print self.VisaName+": Delay attribute value = ", data
@@ -448,7 +451,7 @@ class PyVisa(PyTango.Device_4Impl):
         #    Add your own code here
         try:
             self.__instrument.delay = data[0]
-        except Exception,e:
+        except Exception as e:
             self.error_stream( "In ", self.get_name(), "::write_Delay() Exception: %s"%e)
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
@@ -469,7 +472,7 @@ class PyVisa(PyTango.Device_4Impl):
 #                
 #------------------------------------------------------------------
     def Open(self):
-        self.debug_stream( "In ", self.get_name(), "::Open()")
+        self.debug_stream( "In " + self.get_name() + "::Open()")
         #    Add your own code here
         #if self.__instrument == None:
         #    self.__instrument = instrument(self.VisaName)
@@ -494,14 +497,14 @@ class PyVisa(PyTango.Device_4Impl):
 #                
 #------------------------------------------------------------------
     def Close(self):
-        self.debug_stream( "In ", self.get_name(), "::Close()")
+        self.debug_stream( "In " + self.get_name() + "::Close()")
         #    Add your own code here
         try:
             self.__instrument.close()
             self.stopThread()
             self.set_state(PyTango.DevState.OFF)
             self.machineStatus()
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -524,13 +527,13 @@ class PyVisa(PyTango.Device_4Impl):
 #    argin:  DevVarCharArray    Command string
 #------------------------------------------------------------------
     def Write(self, argin):
-        self.debug_stream( "In ", self.get_name(), "::Write()")
+        self.debug_stream( "In " + self.get_name() + "::Write()")
         #    Add your own code here
         try:
             command = array.array('B', argin).tostring()
             #print self.VisaName+": Writing "+command
             self.__instrument.write(command)
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -555,7 +558,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    argout: DevVarCharArray    Characters readed
 #------------------------------------------------------------------
     def Read(self, argin):
-        self.debug_stream( "In ", self.get_name(), "::Read()")
+        self.debug_stream( "In " + self.get_name() + "::Read()")
         #    Add your own code here
         try:
             vi = self.__instrument.vi
@@ -564,7 +567,7 @@ class PyVisa(PyTango.Device_4Impl):
             #print self.VisaName+": Returning "+cutlongstrings(string, 1000)
             argout = array.array('B', string).tolist()
             return argout
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -589,14 +592,14 @@ class PyVisa(PyTango.Device_4Impl):
 #    argout: DevVarCharArray    Characters readed
 #------------------------------------------------------------------
     def ReadLine(self):
-        self.debug_stream( "In ", self.get_name(), "::ReadLine()")
+        self.debug_stream( "In " + self.get_name() + "::ReadLine()")
         #    Add your own code here
         try:
             string = self.__instrument.read()
             #print self.VisaName+": Returning "+cutlongstrings(string, 1000)
             argout = array.array('B', string).tolist()
             return argout
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -624,13 +627,13 @@ class PyVisa(PyTango.Device_4Impl):
 #    argout: DevVarFloatArray    List of values read
 #------------------------------------------------------------------
     def ReadValues(self):
-        self.debug_stream("In ", self.get_name(), "::ReadValues()")
+        self.debug_stream("In " + self.get_name() + "::ReadValues()")
         #    Add your own code here
         try:
             argout = self.__instrument.read_values()
             #self.debug_stream(self.VisaName+": Returning "+cutlongstrings(str(argout), 1000))
             return argout
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -655,7 +658,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    argout: DevVarCharArray    Answer from the device
 #------------------------------------------------------------------
     def Ask(self, argin):
-        self.debug_stream("In ", self.get_name(), "::Ask()")
+        self.debug_stream("In " + self.get_name() + "::Ask()")
         #    Add your own code here
         try:
             command = array.array('B', argin).tostring()
@@ -664,7 +667,7 @@ class PyVisa(PyTango.Device_4Impl):
             self.debug_stream( self.VisaName+": Returning "+cutlongstrings(string, 1000))
             argout = array.array('B', string).tolist()
             return argout
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -693,7 +696,7 @@ class PyVisa(PyTango.Device_4Impl):
 #    argout: DevVarFloatArray    List of values
 #------------------------------------------------------------------
     def AskValues(self, argin):
-        self.debug_stream( "In ", self.get_name(), "::AskValues()")
+        self.debug_stream("In " + self.get_name() + "::AskValues()")
         #    Add your own code here
         try:
             command = array.array('B', argin).tostring()
@@ -701,7 +704,7 @@ class PyVisa(PyTango.Device_4Impl):
             argout = self.__instrument.ask_for_values(command)
             #self.debug_stream( self.VisaName+": Returning "+cutlongstrings(str(argout), 1000))
             return argout
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -724,13 +727,13 @@ class PyVisa(PyTango.Device_4Impl):
 #                
 #------------------------------------------------------------------
     def Reset(self):
-        self.debug_stream( "In ", self.get_name(), "::Reset()")
+        self.debug_stream("In " + self.get_name() + "::Reset()")
         #    Add your own code here
         try:
             self.__instrument.clear()
             self.stopThread()
             self.startThread(1)
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -753,11 +756,11 @@ class PyVisa(PyTango.Device_4Impl):
 #                
 #------------------------------------------------------------------
     def Trigger(self):
-        self.debug_stream( "In ", self.get_name(), "::Trigger()")
+        self.debug_stream("In " + self.get_name() + "::Trigger()")
         #    Add your own code here
         try:
             self.__instrument.clear()
-        except Exception,e:
+        except Exception as e:
             self.set_state(PyTango.DevState.FAULT)
             self.machineStatus(e)
             self.__connectionEvent.set()
@@ -791,6 +794,10 @@ class PyVisaClass(PyTango.DeviceClass):
             [PyTango.DevString,
             "The name of the device understood by the VISA library",
             [ "SetMePlease" ] ],
+        'VisaLibrary':
+            [PyTango.DevString,
+            "The name of the visa library, default empty string, '@sim' can be used for a simulated device.",
+            [ "" ] ],
         }
 
 
@@ -896,7 +903,7 @@ class PyVisaClass(PyTango.DeviceClass):
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
         self.set_type(name);
-        print "In PyVisaClass  constructor"
+        print("In PyVisaClass  constructor")
 
 #==================================================================
 #
@@ -912,9 +919,9 @@ def main(*args):
         U.server_init()
         U.server_run()
 
-    except PyTango.DevFailed,e:
-        print '-------> Received a DevFailed exception:',e
-    except Exception,e:
+    except PyTango.DevFailed as e:
+        print('-------> Received a DevFailed exception:',e)
+    except Exception as e:
         pass
 
 if __name__ == "__main__":
